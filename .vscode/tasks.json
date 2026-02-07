@@ -7,7 +7,7 @@
       "command": "g++",
       "args": [
         "-g",
-        "${workspaceFolder}/src/*.cpp",
+        "${workspaceFolder}/src/project1/main.cpp",
         "${workspaceFolder}/src/glad.c",
         "-I${workspaceFolder}/include",
         "-L${workspaceFolder}/lib",
