@@ -53,6 +53,14 @@ class Polygon {
             glPopMatrix();
         }
 
+        void printPolygonInformation() {
+            for (auto& vertex : vertices) {
+                std::cout << "Vertex: (" << vertex.x << ", " << vertex.y << ", " << vertex.z << ")\n";
+            }
+
+            std::cout << "Color: (" << color.r << ", " << color.g << ", " << color.b << ")\n";
+        }
+
         void addVertex(Point p) {
             vertices.push_back(p);
         }
@@ -110,6 +118,11 @@ int main() {
     if (!window) {
         glfwTerminate();
         return -1;
+    }
+
+    // print polygon info at the start of the program
+    for (auto& polygon : randomPolygons) {
+        polygon.printPolygonInformation();
     }
 
     // render the polgyons
