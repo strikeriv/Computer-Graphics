@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "cppbuild",
+      "label": "Build OpenGL Project",
+      "command": "g++",
+      "args": [
+        "-g",
+        "${workspaceFolder}/src/*.cpp",
+        "${workspaceFolder}/src/glad.c",
+        "-I${workspaceFolder}/include",
+        "-L${workspaceFolder}/lib",
+        "-lglfw3",
+        "-lgdi32",
+        "-lopengl32",
+        "-o",
+        "${workspaceFolder}/main.exe"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
