@@ -69,45 +69,45 @@ class Ghost {
     public:
         Ghost(Color color, int xPos, int yPos) : color(color), xPos(xPos), yPos(yPos) {};
 
-void draw() {
-    float width = 50.0f; 
-    float radius = width / 2.0f;
-    int segments = 10; 
+    void draw() {
+        float width = 50.0f; 
+        float radius = width / 2.0f;
+        int segments = 10; 
 
-    glBegin(GL_TRIANGLE_FAN);
-    glColor3f(color.r, color.g, color.b);
+        glBegin(GL_TRIANGLE_FAN);
+        glColor3f(color.r, color.g, color.b);
 
-    glVertex2f(xPos, yPos); 
-    glVertex2f(xPos - radius, yPos + radius); // bottom left
-    glVertex2f(xPos - radius, yPos - radius); // top left
+        glVertex2f(xPos, yPos); 
+        glVertex2f(xPos - radius, yPos + radius); // bottom left
+        glVertex2f(xPos - radius, yPos - radius); // top left
 
-    // render the top dome of the ghost
-    for (int i = 0; i <= segments; i++) {
-        float theta = 3.14159f + (float(i) / (float)segments) * 3.14159f;
-        float x = radius * cosf(theta);
-        float y = radius * sinf(theta);
-        glVertex2f(xPos + x, (yPos - radius) + y);
+        // render the top dome of the ghost
+        for (int i = 0; i <= segments; i++) {
+            float theta = 3.14159f + (float(i) / (float)segments) * 3.14159f;
+            float x = radius * cosf(theta);
+            float y = radius * sinf(theta);
+            glVertex2f(xPos + x, (yPos - radius) + y);
+        }
+
+        // render bottom right endpoint of the square
+        glVertex2f(xPos + radius, yPos + radius);
+
+        int numTriangles = 4; 
+        int totalSteps = numTriangles * 2; 
+        float stepWidth = width / (float)totalSteps;
+
+        // render the zig-zag at the bottom
+        for (int i = 1; i <= totalSteps; i++) {
+            float x = (xPos + radius) - (i * stepWidth);
+            float y = (i % 2 != 0) ? (yPos + radius + 10) : (yPos + radius);
+            glVertex2f(x, y);
+        }
+
+        // close the loop by ending at the same point we started with
+        glVertex2f(xPos - radius, yPos + radius);
+
+        glEnd();
     }
-
-    // render bottom right endpoint of the square
-    glVertex2f(xPos + radius, yPos + radius);
-
-    int numTriangles = 4; 
-    int totalSteps = numTriangles * 2; 
-    float stepWidth = width / (float)totalSteps;
-
-    // render the zig-zag at the bottom
-    for (int i = 1; i <= totalSteps; i++) {
-        float x = (xPos + radius) - (i * stepWidth);
-        float y = (i % 2 != 0) ? (yPos + radius + 10) : (yPos + radius);
-        glVertex2f(x, y);
-    }
-
-    // close the loop by ending at the same point we started with
-    glVertex2f(xPos - radius, yPos + radius);
-
-    glEnd();
-}
 };
 
 class Food {
