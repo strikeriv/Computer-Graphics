@@ -69,65 +69,45 @@ class Ghost {
     public:
         Ghost(Color color, int xPos, int yPos) : color(color), xPos(xPos), yPos(yPos) {};
 
-        void draw() {
-            // for square
-            int width = 200;
-            int height = 200;
+void draw() {
+    float width = 50.0f; 
+    float radius = width / 2.0f;
+    int segments = 10; 
 
-            // for top circle
-            int segments = 10;
-            float radius = width / 2;
+    glBegin(GL_TRIANGLE_FAN);
+    glColor3f(color.r, color.g, color.b);
 
-            // fpr triangles
+    glVertex2f(xPos, yPos); 
+    glVertex2f(xPos - radius, yPos + radius); // bottom left
+    glVertex2f(xPos - radius, yPos - radius); // top left
 
-            glBegin(GL_POLYGON);
-            glColor3f(color.r, color.g, color.b);
+    // render the top dome of the ghost
+    for (int i = 0; i <= segments; i++) {
+        float theta = 3.14159f + (float(i) / (float)segments) * 3.14159f;
+        float x = radius * cosf(theta);
+        float y = radius * sinf(theta);
+        glVertex2f(xPos + x, (yPos - radius) + y);
+    }
 
-            glVertex2f(xPos - radius, (yPos + radius) - 50); // bottom left
-            glVertex2f(xPos - radius, yPos - radius); // top left
+    // render bottom right endpoint of the square
+    glVertex2f(xPos + radius, yPos + radius);
 
+    int numTriangles = 4; 
+    int totalSteps = numTriangles * 2; 
+    float stepWidth = width / (float)totalSteps;
 
-            // render the top circle
-            for (int i = 0; i <= segments; i++) {
-                float theta = 2.0f * 3.1415926f * float(i) / float(segments);
+    // render the zig-zag at the bottom
+    for (int i = 1; i <= totalSteps; i++) {
+        float x = (xPos + radius) - (i * stepWidth);
+        float y = (i % 2 != 0) ? (yPos + radius + 10) : (yPos + radius);
+        glVertex2f(x, y);
+    }
 
-                if(theta < 3.141) continue;
+    // close the loop by ending at the same point we started with
+    glVertex2f(xPos - radius, yPos + radius);
 
-                float x = radius * cosf(theta);
-                float y = radius * sinf(theta);
-
-                glVertex2f(xPos + x, (yPos - radius) + y);
-            }
-
-            glVertex2f(xPos + radius, yPos + radius); // bottom right
-
-            // render the triangles at the bottom
-            // we draw 5 points, each equally spaced apart
-            int right = xPos + radius;
-            int bottom = yPos + radius;
-
-            int numTriangles = 6;
-            float stepWidth = width / numTriangles;
-
-            // since we are on the right, we start right and move left
-            // so, our loop order is reversed
-            //for (int i = numTriangles; i < 0; i--) {
-            for (int i = 1; i <= numTriangles; i++) {
-
-                float x = right - (float)(i * stepWidth);
-                float y = (i % 2 == 0) ? bottom : bottom - 50;
-
-
-
-                glVertex2f(x, y);
-
-            }
-
-            // render final point for bottom left of triangle
-            glVertex2f(xPos - radius, yPos + radius);
-
-            glEnd();
-        }
+    glEnd();
+}
 };
 
 class Food {
@@ -175,7 +155,7 @@ int main() {
     // TODO: generate bunch of food at random spots
     Food food(350, 200);
 
-    Ghost ghost1(Color(255, 0, 0), 450, 375);
+    Ghost ghost1(Color(255, 0, 0), 100, 100);
 
     glfwMakeContextCurrent(window);
     while (!glfwWindowShouldClose(window)) {
