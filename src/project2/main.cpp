@@ -70,7 +70,7 @@ class Ghost {
         Ghost(Color color, int xPos, int yPos) : color(color), xPos(xPos), yPos(yPos) {};
 
     void draw() {
-        float width = 50.0f; 
+        float width = 30.0f; 
         float radius = width / 2.0f;
         int segments = 10; 
 
@@ -99,7 +99,7 @@ class Ghost {
         // render the zig-zag at the bottom
         for (int i = 1; i <= totalSteps; i++) {
             float x = (xPos + radius) - (i * stepWidth);
-            float y = (i % 2 != 0) ? (yPos + radius + 10) : (yPos + radius);
+            float y = (i % 2 != 0) ? (yPos + radius + (width / 5)) : (yPos + radius);
             glVertex2f(x, y);
         }
 
