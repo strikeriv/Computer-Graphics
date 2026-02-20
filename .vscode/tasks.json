@@ -3,11 +3,32 @@
   "tasks": [
     {
       "type": "cppbuild",
-      "label": "Build OpenGL Project",
+      "label": "Run Project1",
       "command": "g++",
       "args": [
         "-g",
         "${workspaceFolder}/src/project1/main.cpp",
+        "${workspaceFolder}/src/glad.c",
+        "-I${workspaceFolder}/include",
+        "-L${workspaceFolder}/lib",
+        "-lglfw3",
+        "-lgdi32",
+        "-lopengl32",
+        "-o",
+        "${workspaceFolder}/main.exe"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "cppbuild",
+      "label": "Run Project2",
+      "command": "g++",
+      "args": [
+        "-g",
+        "${workspaceFolder}/src/project2/main.cpp",
         "${workspaceFolder}/src/glad.c",
         "-I${workspaceFolder}/include",
         "-L${workspaceFolder}/lib",
