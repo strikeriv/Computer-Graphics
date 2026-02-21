@@ -11,7 +11,7 @@ const int windowOffset = 25;
 
 const int numOfFoodObjects = 20;
 const int numOfMonsters = 4;
-const int movementSpeed = 50;
+const int baseMovementSpeed = 50;
 
 // random number generator for colors and starting locations
 std::default_random_engine generator;
@@ -39,12 +39,29 @@ class PacMan {
     private:
         float xPos, yPos;
 
+        float mouthSize = 0.5f;
+        float directionX, directionY = 0.0f;
+
     public:
         PacMan(float xPos, float yPos) : xPos(xPos), yPos(yPos) {};
 
         void move(float x, float y) {
             xPos += x;
             yPos += y;
+
+            // keep track of the direction for the mouth animation
+            directionX = 0.0f;
+            directionY = 0.0f;
+
+            if(x > 0) {
+                directionX = 1.0f;
+            } else if (x < 0) {
+                directionX = -1.0f;
+            } else if (y > 0) {
+                directionY = 1.0f;
+            } else if (y < 0) {
+                directionY = -1.0f;
+            }
         }
 
         void draw() {
@@ -57,10 +74,37 @@ class PacMan {
 
             for (int i = 0; i <= segments; i++) {
                 float theta = 2.0f * 3.1415926f * float(i) / float(segments);
-                
-                // skip the mouth area
-                // 22.5 degrees and 337.5 degrees as radians
-                if(!(theta > 0.392 && theta < 5.89)) continue;
+                bool inMouth = false;
+
+                // determine if the current vertex is within the mouth opening
+                if (directionX > 0) {
+                    if (theta < mouthSize || theta > (2.0f * 3.14159f - mouthSize)) {
+                        inMouth = true;
+                    }
+                } else if (directionX < 0) {
+                    if (theta > (3.14159f - mouthSize) && theta < (3.14159f + mouthSize)) {
+                        inMouth = true;
+                    }
+                } else if (directionY > 0) {
+                    if (theta > (1.5708f - mouthSize) && theta < (1.5708f + mouthSize)) {
+                        inMouth = true;
+                    }
+                } else if (directionY < 0) {
+                    if (theta > (4.71239f - mouthSize) && theta < (4.71239f + mouthSize)) {
+                        inMouth = true;
+                    }
+                }
+
+                // if we are in the mouth, we change the position of the vertex
+                // this lets the vertexes that were not rendered not draw lines in between themselves
+                // because opengl weird like that.. idk
+                if (inMouth) {
+                    glVertex2f(xPos, yPos); 
+                } else {
+                    float x = radius * cosf(theta);
+                    float y = radius * sinf(theta);
+                    glVertex2f(xPos + x, yPos + y);
+                }
 
                 float x = radius * cosf(theta);
                 float y = radius * sinf(theta);
@@ -134,8 +178,8 @@ class Ghost {
             directionTimer = movementDuration(generator);
         }
 
-        xPos += directionX * timeDelta * movementSpeed; // speed of 5 pixels per second
-        yPos += directionY * timeDelta * movementSpeed;
+        xPos += directionX * timeDelta * baseMovementSpeed;
+        yPos += directionY * timeDelta * baseMovementSpeed;
 
         // keep the ghost within the window bounds (wrapping around)
         if(xPos > windowWidth) {
@@ -196,8 +240,8 @@ class Food {
                 directionTimer = movementDuration(generator);
             }
 
-            xPos += directionX * timeDelta * (float)(movementSpeed / 3); // speed of 5 pixels per second
-            yPos += directionY * timeDelta * (float)(movementSpeed / 3);
+            xPos += directionX * timeDelta * (float)(baseMovementSpeed / 3);
+            yPos += directionY * timeDelta * (float)(baseMovementSpeed / 3);
 
             // keep the food within the window bounds (wrapping around)
             if(xPos > windowWidth ) {
@@ -251,6 +295,7 @@ int main() {
     std::vector<Food> foods = generateFoods();
 
     double lastTime = glfwGetTime();
+    int pacmanMovementSpeed = baseMovementSpeed * 1.25;
 
     glfwMakeContextCurrent(window);
     while (!glfwWindowShouldClose(window)) {
@@ -264,13 +309,27 @@ int main() {
         glLoadIdentity();
         glOrtho(0, windowWidth, windowHeight, 0, -1, 1);
 
-        pacman.draw();
-        
+        // listen for WASD input to move pacman
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            pacman.move(0, -pacmanMovementSpeed * deltaTime);
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            pacman.move(0, pacmanMovementSpeed * deltaTime);
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            pacman.move(-pacmanMovementSpeed * deltaTime, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            pacman.move(pacmanMovementSpeed * deltaTime, 0);
+        }
+
         for (auto& food : foods) {
             food.draw();
             food.update(deltaTime);
         }
 
+        pacman.draw();
+        
         for (auto& ghost : ghosts) {
             ghost.draw();
             ghost.update(deltaTime);
