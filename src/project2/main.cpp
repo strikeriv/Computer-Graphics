@@ -7,14 +7,17 @@
 // constants
 const int windowWidth = 640;
 const int windowHeight = 480;
+const int windowOffset = 50;
 
 const int numOfFoodObjects = 20;
 const int numOfMonsters = 4;
 
 // random number generator for colors and starting locations
 std::default_random_engine generator;
+
 std::uniform_real_distribution<> colorDistributor(0.0,1.0);
-std::uniform_real_distribution<> pointDistribution(-1.0,1.0);
+std::uniform_int_distribution<> widthDistribution(0 + windowOffset, windowWidth - windowOffset);
+std::uniform_int_distribution<> heightDistribution(0 + windowOffset, windowHeight - windowOffset);
 
 // define our classes
 class Color {
@@ -139,6 +142,27 @@ class Food {
         }
 };
 
+
+std::vector<Ghost> generateGhosts() {
+    std::vector<Ghost> ghosts = {};
+
+    for (int i = 0; i < numOfMonsters; i++) {
+        ghosts.push_back(Ghost(Color(colorDistributor(generator), colorDistributor(generator), colorDistributor(generator)), widthDistribution(generator), heightDistribution(generator)));
+    }
+
+    return ghosts;
+};
+
+std::vector<Food> generateFoods() {
+    std::vector<Food> foods = {};
+
+    for (int i = 0; i < numOfFoodObjects; i++) {
+        foods.push_back(Food(widthDistribution(generator), heightDistribution(generator)));
+    }
+
+    return foods;
+};
+
 // main function 
 int main() {
     if (!glfwInit()) return -1;
@@ -149,13 +173,10 @@ int main() {
         return -1;
     }
 
-    // TODO: make start at random spot
-    PacMan pacman(320, 240);
+    PacMan pacman(widthDistribution(generator), heightDistribution(generator));
 
-    // TODO: generate bunch of food at random spots
-    Food food(350, 200);
-
-    Ghost ghost1(Color(255, 0, 0), 100, 100);
+    std::vector<Ghost> ghosts = generateGhosts();
+    std::vector<Food> foods = generateFoods();
 
     glfwMakeContextCurrent(window);
     while (!glfwWindowShouldClose(window)) {
@@ -166,10 +187,15 @@ int main() {
         glLoadIdentity();
         glOrtho(0, windowWidth, windowHeight, 0, -1, 1);
 
-        ghost1.draw();
-
         pacman.draw();
-        food.draw();
+        
+        for (auto& food : foods) {
+            food.draw();
+        }
+
+        for (auto& ghost : ghosts) {
+            ghost.draw();
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
