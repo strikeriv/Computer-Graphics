@@ -7,17 +7,25 @@
 // constants
 const int windowWidth = 640;
 const int windowHeight = 480;
-const int windowOffset = 50;
+const int windowOffset = 25;
 
 const int numOfFoodObjects = 20;
 const int numOfMonsters = 4;
+const int movementSpeed = 50;
 
 // random number generator for colors and starting locations
 std::default_random_engine generator;
 
+// gen for colors
 std::uniform_real_distribution<> colorDistributor(0.0,1.0);
+
+// gen for starting locations
 std::uniform_int_distribution<> widthDistribution(0 + windowOffset, windowWidth - windowOffset);
 std::uniform_int_distribution<> heightDistribution(0 + windowOffset, windowHeight - windowOffset);
+
+// gen for movements
+std::uniform_real_distribution<> movementDuration(0.0f, 3.5f);
+std::uniform_int_distribution<> direction(-1, 1);
 
 // define our classes
 class Color {
@@ -29,12 +37,12 @@ class Color {
 
 class PacMan {
     private:
-        int xPos, yPos;
+        float xPos, yPos;
 
     public:
-        PacMan(int xPos, int yPos) : xPos(xPos), yPos(yPos) {};
+        PacMan(float xPos, float yPos) : xPos(xPos), yPos(yPos) {};
 
-        void move(int x, int y) {
+        void move(float x, float y) {
             xPos += x;
             yPos += y;
         }
@@ -67,10 +75,14 @@ class PacMan {
 class Ghost {
     private:
         Color color;
-        int xPos, yPos;
+
+        float xPos, yPos;
+
+        float directionX, directionY = 0.0f;
+        float directionTimer = 0.0f;
     
     public:
-        Ghost(Color color, int xPos, int yPos) : color(color), xPos(xPos), yPos(yPos) {};
+        Ghost(Color color, float xPos, float yPos) : color(color), xPos(xPos), yPos(yPos) {};
 
     void draw() {
         float width = 30.0f; 
@@ -111,12 +123,43 @@ class Ghost {
 
         glEnd();
     }
+
+    void update(float timeDelta) {
+        directionTimer -= timeDelta;
+
+        // if the timer is up, generate a new random direction and reset the timer
+        if(directionTimer <= 0) {
+            directionX = direction(generator);
+            directionY = direction(generator);
+            directionTimer = movementDuration(generator);
+        }
+
+        xPos += directionX * timeDelta * movementSpeed; // speed of 5 pixels per second
+        yPos += directionY * timeDelta * movementSpeed;
+
+        // keep the ghost within the window bounds (wrapping around)
+        if(xPos > windowWidth) {
+            xPos = windowOffset;
+        } else if (xPos < windowOffset) {
+            xPos = windowWidth;
+        }
+
+        if(yPos > windowHeight - windowOffset) {
+            yPos = windowOffset;
+        } else if (yPos < windowOffset) {
+            yPos = windowHeight - windowOffset;
+        }
+    }
 };
 
 class Food {
     private:
         Color color = Color(255, 105, 180);
-        int xPos, yPos;
+
+        float xPos, yPos;
+
+        float directionX, directionY = 0.0f;
+        float directionTimer = 0.0f;
 
     public:
         Food(int xPos, int yPos) : xPos(xPos), yPos(yPos) {};
@@ -139,6 +182,35 @@ class Food {
             }
 
             glEnd();
+        }
+
+        // same func as ghost
+        // food moves slower though
+        void update(float timeDelta) {
+            directionTimer -= timeDelta;
+
+            // if the timer is up, generate a new random direction and reset the timer
+            if(directionTimer <= 0) {
+                directionX = direction(generator);
+                directionY = direction(generator);
+                directionTimer = movementDuration(generator);
+            }
+
+            xPos += directionX * timeDelta * (float)(movementSpeed / 3); // speed of 5 pixels per second
+            yPos += directionY * timeDelta * (float)(movementSpeed / 3);
+
+            // keep the food within the window bounds (wrapping around)
+            if(xPos > windowWidth ) {
+                xPos = windowOffset;
+            } else if (xPos < 0) {
+                xPos = windowWidth;
+            }
+
+            if(yPos > windowHeight) {
+                yPos = windowOffset;
+            } else if (yPos < 0) {
+                yPos = windowHeight;
+            }
         }
 };
 
@@ -178,8 +250,13 @@ int main() {
     std::vector<Ghost> ghosts = generateGhosts();
     std::vector<Food> foods = generateFoods();
 
+    double lastTime = glfwGetTime();
+
     glfwMakeContextCurrent(window);
     while (!glfwWindowShouldClose(window)) {
+        double currentTime = glfwGetTime();
+        float deltaTime = (float)(currentTime - lastTime);
+        
         glClear(GL_COLOR_BUFFER_BIT);
         
         glViewport(0, 0, windowWidth, windowHeight);
@@ -191,14 +268,18 @@ int main() {
         
         for (auto& food : foods) {
             food.draw();
+            food.update(deltaTime);
         }
 
         for (auto& ghost : ghosts) {
             ghost.draw();
+            ghost.update(deltaTime);
         }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        lastTime = currentTime;
     }
 
     glfwTerminate();
