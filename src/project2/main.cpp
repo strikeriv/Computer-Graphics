@@ -78,6 +78,19 @@ class PacMan {
             } else if (y < 0) {
                 directionY = -1.0f;
             }
+
+            // keep pacman within the window bounds (wrapping around)
+            if(xPos > windowWidth) {
+                xPos = windowOffset;
+            } else if (xPos < windowOffset) {
+                xPos = windowWidth;
+            }
+
+            if(yPos > windowHeight) {
+                yPos = windowOffset;
+            } else if (yPos < windowOffset) {
+                yPos = windowHeight;
+            }
         }
 
         void draw(float currentTime) {
@@ -390,6 +403,7 @@ int main() {
                 std::cout << "Game Over!" << std::endl;
                 std::cout << "Score: " << score << std::endl;
 
+                glfwWaitEventsTimeout(6.0); // wait a little before closing the window so the player can see the collision
                 glfwSetWindowShouldClose(window, true);
             }
         }
