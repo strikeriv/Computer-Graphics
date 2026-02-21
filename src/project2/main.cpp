@@ -13,6 +13,8 @@ const int numOfFoodObjects = 20;
 const int numOfMonsters = 4;
 const int baseMovementSpeed = 50;
 
+int score = 0;
+
 // random number generator for colors and starting locations
 std::default_random_engine generator;
 
@@ -39,12 +41,25 @@ class PacMan {
     private:
         float xPos, yPos;
 
+        float radius = 20.0f;
         float mouthSize = 0.5f;
         float mouthSpeed = 10.0f;
         float directionX, directionY = 0.0f;
 
     public:
         PacMan(float xPos, float yPos) : xPos(xPos), yPos(yPos) {};
+
+        float getX() {
+            return xPos;
+        }
+
+        float getY() {
+            return yPos;
+        }
+
+        float getRadius() {
+            return radius;
+        }
 
         void move(float x, float y) {
             xPos += x;
@@ -66,8 +81,7 @@ class PacMan {
         }
 
         void draw(float currentTime) {
-            float radius = 20.0f;
-            int segments = 60;
+            int segments = 30;
 
             glBegin(GL_TRIANGLE_FAN);
             glColor3f(1.0f, 1.0f, 0.0f); // yellow cause pacman yellow
@@ -109,11 +123,6 @@ class PacMan {
                     float y = radius * sinf(theta);
                     glVertex2f(xPos + x, yPos + y);
                 }
-
-                float x = radius * cosf(theta);
-                float y = radius * sinf(theta);
-
-                glVertex2f(xPos + x, yPos + y);
             }
 
             glEnd();
@@ -126,84 +135,98 @@ class Ghost {
 
         float xPos, yPos;
 
+        float width = 30.0f; 
+        float radius = width / 2.0f;
+
         float directionX, directionY = 0.0f;
         float directionTimer = 0.0f;
     
     public:
         Ghost(Color color, float xPos, float yPos) : color(color), xPos(xPos), yPos(yPos) {};
 
-    void draw() {
-        float width = 30.0f; 
-        float radius = width / 2.0f;
-        int segments = 10; 
-
-        glBegin(GL_TRIANGLE_FAN);
-        glColor3f(color.r, color.g, color.b);
-
-        glVertex2f(xPos, yPos); 
-        glVertex2f(xPos - radius, yPos + radius); // bottom left
-        glVertex2f(xPos - radius, yPos - radius); // top left
-
-        // render the top dome of the ghost
-        for (int i = 0; i <= segments; i++) {
-            float theta = 3.14159f + (float(i) / (float)segments) * 3.14159f;
-            float x = radius * cosf(theta);
-            float y = radius * sinf(theta);
-            glVertex2f(xPos + x, (yPos - radius) + y);
+        float getX() {
+            return xPos;
         }
 
-        // render bottom right endpoint of the square
-        glVertex2f(xPos + radius, yPos + radius);
-
-        int numTriangles = 4; 
-        int totalSteps = numTriangles * 2; 
-        float stepWidth = width / (float)totalSteps;
-
-        // render the zig-zag at the bottom
-        for (int i = 1; i <= totalSteps; i++) {
-            float x = (xPos + radius) - (i * stepWidth);
-            float y = (i % 2 != 0) ? (yPos + radius + (width / 5)) : (yPos + radius);
-            glVertex2f(x, y);
+        float getY() {
+            return yPos;
         }
 
-        // close the loop by ending at the same point we started with
-        glVertex2f(xPos - radius, yPos + radius);
-
-        glEnd();
-    }
-
-    void update(float timeDelta) {
-        directionTimer -= timeDelta;
-
-        // if the timer is up, generate a new random direction and reset the timer
-        if(directionTimer <= 0) {
-            directionX = direction(generator);
-            directionY = direction(generator);
-            directionTimer = movementDuration(generator);
+        float getRadius() {
+            return radius;
         }
 
-        xPos += directionX * timeDelta * baseMovementSpeed;
-        yPos += directionY * timeDelta * baseMovementSpeed;
+        void draw() {
+            int segments = 10; 
 
-        // keep the ghost within the window bounds (wrapping around)
-        if(xPos > windowWidth) {
-            xPos = windowOffset;
-        } else if (xPos < windowOffset) {
-            xPos = windowWidth;
+            glBegin(GL_TRIANGLE_FAN);
+            glColor3f(color.r, color.g, color.b);
+
+            glVertex2f(xPos, yPos); 
+            glVertex2f(xPos - radius, yPos + radius); // bottom left
+            glVertex2f(xPos - radius, yPos - radius); // top left
+
+            // render the top dome of the ghost
+            for (int i = 0; i <= segments; i++) {
+                float theta = 3.14159f + (float(i) / (float)segments) * 3.14159f;
+                float x = radius * cosf(theta);
+                float y = radius * sinf(theta);
+                glVertex2f(xPos + x, (yPos - radius) + y);
+            }
+
+            // render bottom right endpoint of the square
+            glVertex2f(xPos + radius, yPos + radius);
+
+            int numTriangles = 4; 
+            int totalSteps = numTriangles * 2; 
+            float stepWidth = width / (float)totalSteps;
+
+            // render the zig-zag at the bottom
+            for (int i = 1; i <= totalSteps; i++) {
+                float x = (xPos + radius) - (i * stepWidth);
+                float y = (i % 2 != 0) ? (yPos + radius + (width / 5)) : (yPos + radius);
+                glVertex2f(x, y);
+            }
+
+            // close the loop by ending at the same point we started with
+            glVertex2f(xPos - radius, yPos + radius);
+
+            glEnd();
         }
 
-        if(yPos > windowHeight - windowOffset) {
-            yPos = windowOffset;
-        } else if (yPos < windowOffset) {
-            yPos = windowHeight - windowOffset;
+        void update(float timeDelta) {
+            directionTimer -= timeDelta;
+
+            // if the timer is up, generate a new random direction and reset the timer
+            if(directionTimer <= 0) {
+                directionX = direction(generator);
+                directionY = direction(generator);
+                directionTimer = movementDuration(generator);
+            }
+
+            xPos += directionX * timeDelta * baseMovementSpeed;
+            yPos += directionY * timeDelta * baseMovementSpeed;
+
+            // keep the ghost within the window bounds (wrapping around)
+            if(xPos > windowWidth) {
+                xPos = windowOffset;
+            } else if (xPos < windowOffset) {
+                xPos = windowWidth;
+            }
+
+            if(yPos > windowHeight - windowOffset) {
+                yPos = windowOffset;
+            } else if (yPos < windowOffset) {
+                yPos = windowHeight - windowOffset;
+            }
         }
-    }
 };
 
 class Food {
     private:
         Color color = Color(255, 105, 180);
 
+        float radius = 5.0f;
         float xPos, yPos;
 
         float directionX, directionY = 0.0f;
@@ -212,8 +235,19 @@ class Food {
     public:
         Food(int xPos, int yPos) : xPos(xPos), yPos(yPos) {};
 
+        float getX() {
+            return xPos;
+        }
+
+        float getY() {
+            return yPos;
+        }
+
+        float getRadius() {
+            return radius;
+        }
+
         void draw() {
-            float radius = 5.0f;
             int segments = 10;
 
             glBegin(GL_TRIANGLE_FAN);
@@ -262,7 +296,6 @@ class Food {
         }
 };
 
-
 std::vector<Ghost> generateGhosts() {
     std::vector<Ghost> ghosts = {};
 
@@ -282,6 +315,17 @@ std::vector<Food> generateFoods() {
 
     return foods;
 };
+
+// check the collision of two circles (used for pacman, food and the ghosts)
+// uses the pythagorean theorem to determine the distance between the centers of the two circles
+// if the distance between the two is less than the sum of the radii, then there is a collision
+bool checkCollision(float x1, float y1, float r1, float x2, float y2, float r2) {
+    float dx = x1 - x2;
+    float dy = y1 - y2;
+    float distance = sqrt(dx * dx + dy * dy);
+
+    return distance < (r1 + r2);
+}
 
 // main function 
 int main() {
@@ -327,6 +371,32 @@ int main() {
             pacman.move(pacmanMovementSpeed * deltaTime, 0);
         }
 
+        // check for collisions between pacman and the food
+        for (auto it = foods.begin(); it != foods.end();) {
+            if (checkCollision(pacman.getX(), pacman.getY(), pacman.getRadius(), it->getX(), it->getY(), it->getRadius())) {
+                it = foods.erase(it);
+                score += 10;
+            } else {
+                ++it;
+            }
+        }
+
+        // check for collisions between pacman and the ghosts
+        // isn't perfect since the ghosts are not perfect circles, but who cares
+        // if we collide with a ghost, we end the game by setting the window to close
+        // i'm way too lazy to implement something cool here, sorry TAs!
+        for (auto& ghost : ghosts) {
+            if (checkCollision(pacman.getX(), pacman.getY(), pacman.getRadius(), ghost.getX(), ghost.getY(), 15.0f)) {
+                std::cout << "Game Over!" << std::endl;
+                std::cout << "Score: " << score << std::endl;
+
+                glfwSetWindowShouldClose(window, true);
+            }
+        }
+
+        // render the food, pacman and the ghosts
+        // in a specific order to make sure food is behind pacman, and pacman is behind the ghosts
+        // idk I watch a video on pacman and that's how it looked like so we ball
         for (auto& food : foods) {
             food.draw();
             food.update(deltaTime);
