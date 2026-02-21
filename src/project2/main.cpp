@@ -40,6 +40,7 @@ class PacMan {
         float xPos, yPos;
 
         float mouthSize = 0.5f;
+        float mouthSpeed = 10.0f;
         float directionX, directionY = 0.0f;
 
     public:
@@ -64,7 +65,7 @@ class PacMan {
             }
         }
 
-        void draw() {
+        void draw(float currentTime) {
             float radius = 20.0f;
             int segments = 60;
 
@@ -77,21 +78,24 @@ class PacMan {
                 bool inMouth = false;
 
                 // determine if the current vertex is within the mouth opening
-                if (directionX > 0) {
-                    if (theta < mouthSize || theta > (2.0f * 3.14159f - mouthSize)) {
-                        inMouth = true;
-                    }
-                } else if (directionX < 0) {
-                    if (theta > (3.14159f - mouthSize) && theta < (3.14159f + mouthSize)) {
-                        inMouth = true;
-                    }
-                } else if (directionY > 0) {
-                    if (theta > (1.5708f - mouthSize) && theta < (1.5708f + mouthSize)) {
-                        inMouth = true;
-                    }
-                } else if (directionY < 0) {
-                    if (theta > (4.71239f - mouthSize) && theta < (4.71239f + mouthSize)) {
-                        inMouth = true;
+                // only render on specific frames though, to make it look like the mouth is opening and closing
+                if((int)(currentTime * mouthSpeed) % 2 == 0) {
+                    if (directionX > 0) {
+                        if (theta < mouthSize || theta > (2.0f * 3.14159f - mouthSize)) {
+                            inMouth = true;
+                        }
+                    } else if (directionX < 0) {
+                        if (theta > (3.14159f - mouthSize) && theta < (3.14159f + mouthSize)) {
+                            inMouth = true;
+                        }
+                    } else if (directionY > 0) {
+                        if (theta > (1.5708f - mouthSize) && theta < (1.5708f + mouthSize)) {
+                            inMouth = true;
+                        }
+                    } else if (directionY < 0) {
+                        if (theta > (4.71239f - mouthSize) && theta < (4.71239f + mouthSize)) {
+                            inMouth = true;
+                        }
                     }
                 }
 
@@ -328,7 +332,7 @@ int main() {
             food.update(deltaTime);
         }
 
-        pacman.draw();
+        pacman.draw(currentTime);
         
         for (auto& ghost : ghosts) {
             ghost.draw();
