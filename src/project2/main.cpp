@@ -340,6 +340,11 @@ bool checkCollision(float x1, float y1, float r1, float x2, float y2, float r2) 
     return distance < (r1 + r2);
 }
 
+PacMan pacman(widthDistribution(generator), heightDistribution(generator));
+
+std::vector<Ghost> ghosts = generateGhosts();
+std::vector<Food> foods = generateFoods();
+
 // main function 
 int main() {
     if (!glfwInit()) return -1;
@@ -349,11 +354,6 @@ int main() {
         glfwTerminate();
         return -1;
     }
-
-    PacMan pacman(widthDistribution(generator), heightDistribution(generator));
-
-    std::vector<Ghost> ghosts = generateGhosts();
-    std::vector<Food> foods = generateFoods();
 
     double lastTime = glfwGetTime();
     int pacmanMovementSpeed = baseMovementSpeed * 1.25;
@@ -406,6 +406,15 @@ int main() {
                 glfwWaitEventsTimeout(6.0); // wait a little before closing the window so the player can see the collision
                 glfwSetWindowShouldClose(window, true);
             }
+        }
+
+        // check to see if any food is left, if not we win and end the game
+        if(foods.size() == 0) {
+            std::cout << "You Win!" << std::endl;
+            std::cout << "Score: " << score << std::endl;
+
+            glfwWaitEventsTimeout(6.0); // wait a little before closing so they can savor the win
+            glfwSetWindowShouldClose(window, true);
         }
 
         // render the food, pacman and the ghosts
