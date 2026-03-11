@@ -19,7 +19,7 @@
       ],
       "group": {
         "kind": "build",
-        "isDefault": true
+        "isDefault": false
       }
     },
     {
@@ -40,7 +40,28 @@
       ],
       "group": {
         "kind": "build",
-        "isDefault": true
+        "isDefault": false
+      }
+    },
+    {
+      "type": "cppbuild",
+      "label": "Run Project3",
+      "command": "g++",
+      "args": [
+        "-g",
+        "${workspaceFolder}/src/project3/main.cpp",
+        "${workspaceFolder}/src/glad.c",
+        "-I${workspaceFolder}/include",
+        "-L${workspaceFolder}/lib",
+        "-lglfw3",
+        "-lgdi32",
+        "-lopengl32",
+        "-o",
+        "${workspaceFolder}/main.exe"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
       }
     }
   ]
