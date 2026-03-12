@@ -34,13 +34,16 @@ class Polygon {
             avgHeight /= 4.0f;
 
             // 2. Define our "Biome" colors
-            if (avgHeight <= 2.0f) {
-            // Deep Valley / Water Bed
+            if (avgHeight <= 0.5f) {
+                // Water Bed
+                glColor3f(0.0f, 0.7f, 1.0f); // Water Blue
+             } else if (avgHeight <= 6.0f) {
+                // Deep Valley
                 glColor3f(0.1f, 0.4f, 0.1f); // Very Dark Green
-            } else if (avgHeight <= 18.0f) {
+            } else if (avgHeight <= 24.0f) {
                 // Lush Lowlands
                 glColor3f(0.34f, 0.7f, 0.3f); // Grass Green
-            } else if (avgHeight <= 45.0f) {
+            } else if (avgHeight <= 30.0f) {
                 // High Peaks
                 glColor3f(0.45f, 0.38f, 0.26f); // Mountain Rock Brown
             } else {
@@ -130,7 +133,7 @@ void smoothTerrainGrid() {
             // grab neighbors, and summate their heights
             // plus, we cap the bottom so we have a smooth surface down there
             float neighborSummation = summateTerrainGridNeighbors(x, z);
-            if(neighborSummation < 10.0f) { 
+            if(neighborSummation < 7.5f) { 
                 neighborSummation = 0.0f;
             }
 
