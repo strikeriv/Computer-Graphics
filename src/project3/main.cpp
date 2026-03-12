@@ -15,6 +15,8 @@ const int maxHeight = gridHeight / 16;
 std::default_random_engine generator;
 std::uniform_real_distribution<> noiseDistribution(0.0, 5);
 
+std::vector<std::vector<float>> xCoords, yCoords, zCoords, smoothedYCoords;
+
 class Point {
     public:
         float x, y, z;
@@ -22,12 +24,34 @@ class Point {
         Point(float x, float y, float z) : x(x), y(y), z(z) {}
 };
 
+Point calculateVectorNormal(int x, int z) {
+    float heightL = yCoords[x][z];
+    float heightR = yCoords[x + 1][z];
+    float heightD = yCoords[x][z + 1];
+
+    // calculate the cross product
+    float normalX = -(heightR - heightL);
+    float normalY = 1.0f;
+    float normalZ = -(heightD - heightL);
+
+    // normalize the normal vector
+    float length = sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+
+    return Point(normalX / length, normalY / length, normalZ / length);
+}
+
 class Polygon {
     private:
         std::vector<Point> vertices;
     
     public:
-        void draw() {
+        void draw(Point lightSource) {
+            // calculate brightness based on light source
+            Point normal = calculateVectorNormal(vertices[0].x, vertices[0].z);
+
+            float dot = (normal.x * lightSource.x) + (normal.y * lightSource.y) + (normal.z * lightSource.z);
+            float diffuse = std::max(0.2f, std::min(1.0f, dot));
+
             // AI generated code for colors
             float avgHeight = 0;
             for(const auto& v : vertices) avgHeight += v.y;
@@ -36,19 +60,19 @@ class Polygon {
             // 2. Define our "Biome" colors
             if (avgHeight <= 0.5f) {
                 // Water Bed
-                glColor3f(0.0f, 0.7f, 1.0f); // Water Blue
-             } else if (avgHeight <= 6.0f) {
+                glColor3f(0.0f * diffuse, 0.0f * diffuse, 1.0f * diffuse); // Water Blue
+            } else if (avgHeight <= 6.0f) {
                 // Deep Valley
-                glColor3f(0.1f, 0.4f, 0.1f); // Very Dark Green
+                glColor3f(0.1f * diffuse, 0.4f * diffuse, 0.1f * diffuse); // Very Dark Green
             } else if (avgHeight <= 24.0f) {
                 // Lush Lowlands
-                glColor3f(0.34f, 0.7f, 0.3f); // Grass Green
+                glColor3f(0.34f * diffuse, 0.7f * diffuse, 0.3f * diffuse); // Grass Green
             } else if (avgHeight <= 30.0f) {
                 // High Peaks
-                glColor3f(0.45f, 0.38f, 0.26f); // Mountain Rock Brown
+                glColor3f(0.45f * diffuse, 0.38f * diffuse, 0.26f * diffuse); // Mountain Rock Brown
             } else {
                 // Snow Caps (only for the very highest points)
-                glColor3f(0.95f, 0.95f, 1.0f); 
+                glColor3f(0.95f * diffuse, 0.95f * diffuse, 1.0f * diffuse); 
             }
 
             glBegin(GL_QUADS);
@@ -72,8 +96,6 @@ class Polygon {
             }
         }
 };
-
-std::vector<std::vector<float>> xCoords, yCoords, zCoords, smoothedYCoords;
 
 void generateTerrainGrid() {
     for(int x = 0; x < gridWidth; x++) {
@@ -180,6 +202,7 @@ int main() {
         return -1;
     }
     
+    Point lightSource = Point(0.5f, 1.0f, 0.5f); // light coming from above and slightly to the side
     float rotationX, rotationY, rotationZ = 0.0;
 
     // set the sizes of the vectors on load
@@ -247,7 +270,7 @@ int main() {
         glTranslatef((-gridWidth / 2), 0, (-gridHeight / 2));
 
         for (auto& polygon : polygons) {
-            polygon.draw();
+            polygon.draw(lightSource);
         }
 
         glfwSwapBuffers(window);
