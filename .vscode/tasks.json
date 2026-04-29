@@ -84,6 +84,27 @@
         "kind": "build",
         "isDefault": false
       }
+    },
+    {
+      "type": "cppbuild",
+      "label": "Run Project5",
+      "command": "g++",
+      "args": [
+        "-g",
+        "${workspaceFolder}/src/project5/main.cpp",
+        "${workspaceFolder}/src/glad.c",
+        "-I${workspaceFolder}/include",
+        "-L${workspaceFolder}/lib",
+        "-lglfw3",
+        "-lgdi32",
+        "-lopengl32",
+        "-o",
+        "${workspaceFolder}/main.exe"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     }
   ]
 }
