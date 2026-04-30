@@ -115,8 +115,16 @@ std::vector<Hittable*> sceneObjects = {
     new Sphere({0.0f, 0.0f, -5.0f}, 1.0f),
 
     // the one in orbit
-    new Sphere({0.0f, 0.0f, -5.0f}, 0.5f)
+    new Sphere({0.0f, 0.0f, -5.0f}, 0.5f),
+
+    // random other spheres
+    new Sphere({-3.0f, 2.0f, -5.0f}, 1.0f),
+    new Sphere({4.0f, 2.0f, -8.0f}, 1.0f),
 };
+
+Vec3 reflect(const Vec3& I, const Vec3& N) {
+    return I - 2.0f * I.dot(N) * N;
+}
 
 std::vector<float> raytraceScene(float time) {
     // create a buffer to hold the color value of each ray-traced pixel
@@ -126,70 +134,91 @@ std::vector<float> raytraceScene(float time) {
     if (sceneObjects.size() >= 3) {
         float orbitRadius = 2.0f;
 
-        sceneObjects[2]->center.x = sceneObjects[1]->center.x + std::sin(time) * orbitRadius;
-        sceneObjects[2]->center.z = sceneObjects[1]->center.z + std::cos(time) * orbitRadius;
+        sceneObjects[2]->center.x = sceneObjects[1]->center.x + std::sin(time * 3.0f) * orbitRadius;
+        sceneObjects[2]->center.z = sceneObjects[1]->center.z + std::cos(time * 3.0f) * orbitRadius;
         sceneObjects[2]->center.y = std::sin(time * 0.5f) * 0.5f; 
     }
 
     // loop over every pixel within the scene
     for (int y = 0; y < HEIGHT; y++) {
-            for (int x = 0; x < WIDTH; x++) {
-                // create a ray from the camera which goes through the pixel
-                // convert to a coordinate system (UV mapping)
-                float u = (float)x / WIDTH * 2.0f - 1.0f;
-                float v = (float)y / HEIGHT * 2.0f - 1.0f;
-                float aspect = (float)WIDTH / HEIGHT;
-                u *= aspect; 
+        for (int x = 0; x < WIDTH; x++) {
+            // create a ray from the camera which goes through the pixel
+            // convert to a coordinate system (UV mapping)
+            float u = (float)x / WIDTH * 2.0f - 1.0f;
+            float v = (float)y / HEIGHT * 2.0f - 1.0f;
+            float aspect = (float)WIDTH / HEIGHT;
+            u *= aspect; 
 
-                Ray ray = {{0, 0, 0}, {u, v, -1.0f}};
+            Ray ray = {{0, 0, 0}, {u, v, -1.0f}};
 
-                // check if the ray intersects with any object in the scene
-                // this gets complicated because we must ensure we hit the closest object
-                float closest_t = 1e30f; // infinity
-                Hittable* closest_obj = nullptr;
+            // check if the ray intersects with any object in the scene
+            // this gets complicated because we must ensure we hit the closest object
+            float closest_t = 1e30f; // infinity
+            Hittable* closest_obj = nullptr;
 
-                for (const auto& obj : sceneObjects) {
-                    float t = obj->getIntersection(ray);
-                    if (t > 0.0f && t < closest_t) {
-                        closest_t = t;
-                        closest_obj = obj;
+            for (const auto& obj : sceneObjects) {
+                float t = obj->getIntersection(ray);
+                if (t > 0.0f && t < closest_t) {
+                    closest_t = t;
+                    closest_obj = obj;
+                }
+            }   
+ 
+            // if we hit an object, we calculate the color based on the normal at the hit point
+            // so we can have a cool lil look to the sphere
+            int idx = (y * WIDTH + x) * 3;
+            if (closest_obj) {
+                Vec3 hit_point = ray.at(closest_t);
+                Vec3 normal = closest_obj->getNormal(hit_point);
+
+                // if the clostest objects is our middle sphere
+                // run some reflection
+                if (closest_obj == sceneObjects[1] || closest_obj == sceneObjects[3]) { 
+                    Ray reflectRay = { hit_point + (normal * 0.001f), reflect(ray.direction.normalize(), normal) };
+                    
+                    float reflect_t = 1e30f;
+                    Hittable* reflect_obj = nullptr;
+                    for (auto obj : sceneObjects) {
+                        float t = obj->getIntersection(reflectRay);
+                        if (t > 0.001f && t < reflect_t) {
+                            reflect_t = t;
+                            reflect_obj = obj;
+                        }
                     }
-                }   
 
-                // if we hit an object, we calculate the color based on the normal at the hit point
-                // so we can have a cool lil look to the sphere
-                int idx = (y * WIDTH + x) * 3;
-                if (closest_obj) {
-                    // find the point where the ray hits the object
-                    Vec3 hit_point = ray.at(closest_t);
-
-                    // calculate the vector normal at the hit point
-                    Vec3 normal = closest_obj->getNormal(hit_point);
-
-                    // some seperate logic for the checkerboard pattern on the floor
-                    // if the closest object (obj 0) is floor
-                    if(closest_obj == sceneObjects[0]) {
-                        // compute a check variable based on the x & z positions of the hit point
-                        int check = (int)(std::floor(hit_point.x * 1.0f)) + (int)(std::floor(hit_point.z * 1.0f));
-                        
-                        // use the check to swap two colors for the checkerboard pattern
-                        if (check % 2 == 0) {
-                            pixels[idx] = 1.0f; pixels[idx+1] = 1.0f; pixels[idx+2] = 0.0f;
+                    if (reflect_obj) {
+                        Vec3 r_hit = reflectRay.at(reflect_t);
+                        if (reflect_obj == sceneObjects[0]) {
+                            int check = (int)(std::floor(r_hit.x)) + (int)(std::floor(r_hit.z));
+                            if (check % 2 == 0) {
+                                pixels[idx] = 1.0f; pixels[idx+1] = 1.0f; pixels[idx+2] = 0.0f;
+                            } else {
+                                pixels[idx] = 1.0f; pixels[idx+1] = 0.0f; pixels[idx+2] = 0.0f;
+                            }
                         } else {
-                            pixels[idx] = 1.0f; pixels[idx+1] = 0.0f; pixels[idx+2] = 0.0f;
+                            Vec3 r_normal = reflect_obj->getNormal(r_hit);
+                            pixels[idx] = (r_normal.x + 1.0f) * 0.5f;
+                            pixels[idx+1] = (r_normal.y + 1.0f) * 0.5f;
+                            pixels[idx+2] = (r_normal.z + 1.0f) * 0.5f;
                         }
                     } else {
-                        // generate the RGB values based on the normal
-                        pixels[idx] = (normal.x + 1.0f) * 0.5f; // red
-                        pixels[idx + 1] = (normal.y + 1.0f) * 0.5f; // green
-                        pixels[idx + 2] = (normal.z + 1.0f) * 0.5f; // blue!
+                        pixels[idx] = 0.1f; pixels[idx+1] = 0.1f; pixels[idx+2] = 0.1f;
+                    }
+                } else if (closest_obj == sceneObjects[0]) {
+                    int check = (int)(std::floor(hit_point.x)) + (int)(std::floor(hit_point.z));
+                    if (check % 2 == 0) {
+                        pixels[idx] = 1.0f; pixels[idx+1] = 1.0f; pixels[idx+2] = 0.0f;
+                    } else {
+                        pixels[idx] = 1.0f; pixels[idx+1] = 0.0f; pixels[idx+2] = 0.0f;
                     }
                 } else {
-                    // if not hit, we set the pixel color to a background color (gray)
-                    pixels[idx] = 0.1f; pixels[idx+1] = 0.1f; pixels[idx+2] = 0.1f;
+                    pixels[idx] = (normal.x + 1.0f) * 0.5f;
+                    pixels[idx+1] = (normal.y + 1.0f) * 0.5f;
+                    pixels[idx+2] = (normal.z + 1.0f) * 0.5f;
                 }
             }
         }
+    }
 
     return pixels;
 }
